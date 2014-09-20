@@ -2,7 +2,8 @@ from flask import Flask, request, make_response, abort
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask import jsonify
 from sqlalchemy import desc, asc, Table, insert
-#import models
+import os
+import hashlib
 
 app = Flask(__name__)
 db = SQLAlchemy(app)
@@ -19,6 +20,7 @@ class User(db.Model):
 	username = db.Column(db.String(128))
 	email = db.Column(db.String(128))
 	password = db.Column(db.String(128))
+	salt = db.Column(db.String(128))
 	beer_added_today = db.Column(db.Integer)
 
 @app.errorhandler(500)
@@ -55,21 +57,53 @@ def users():
 		email = request.get_json().get('email')
 		password = request.get_json().get('password')
 
+		salt = os.urandom(16)
+		salt = str(salt).encode('utf-8')
+		password = password.encode('utf-8')
+		passhash = hashlib.sha256()
+		passhash.update(salt+password)
+
+
 		if username == "" or username == None:
 			abort(500)
+		if email == "" or email == None:
+			abort(500)
+		if password == "" or password == None:
+			abort(500)
 
-		userdata = [username, email, password]
+		newUser = User(
+			username = username,
+			email = email,
+			password = passhash.hexdigest(),
+			salt = salt,
+			beer_added_today = 0)
 
-		users = Table('users', meta)
-
-		ins = User.insert().values(username = username, email = email, password = password)
-
-		conn = engine.connect
-
-		conn.execute(ins)
+		dbsession = db.session()
+		dbsession.add(newUser)
+		# dbsession.merge(newUser)
+		# dbsession.query(User).filter_by(id = uid).delete()
+		dbsession.commit()
 
 		success = "User Created"
 		return jsonify(response = success)
+
+
+@app.route('/users/<int:uid>/', methods=['GET', 'PUT', 'DELETE'])
+def user(uid):
+	if request.method == 'GET':
+
+		result = User.query.filter_by(id = uid).first()
+
+		d = {	'id': result.id,
+				'username': result.username,
+				'email': result.email,
+				'beer_added_today': result.beer_added_today,
+				'password' : result.password,
+				'salt' : result.salt }
+
+		return jsonify(user = d)
+
+
 
 
 if __name__ == '__main__':
