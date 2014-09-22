@@ -45,6 +45,8 @@ Preliminary requirements:
 
 
 Execute the following commands in the terminal (or perform the system equivalent):
+
+
     cd /path/to/beer_manager
     virtualenv venv
     . venv/bin/activate
