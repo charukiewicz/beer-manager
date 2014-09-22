@@ -86,15 +86,15 @@ The Beer Manager API accepts the HTTP verbs POST, PUT, GET, and DELETE.  The ava
 |------------------|-------------------|-------------|---------------------------|-----------------|
 | /                | (error)           | (error)     | view statistics           | (error)         |
 | /users/          | create new user   | (error)     | view all users            | (error)         |
-| /users/<id>/     | (error)           | update user | view user info/favorites  | delete user     |
+| /users/id/       | (error)           | update user | view user info/favorites  | delete user     |
 | /beers/          | create new beer   | (error)     | get beer list             | (error)         |
-| /beers/<id>/     | (error)           | (error)     | view beer specs/ratings   | delete beer     |
+| /beers/id/       | (error)           | (error)     | view beer specs/ratings   | delete beer     |
 | /glasses/        | create new glass  | (error)     | view all glasses          | (error)         |
-| /glasses/<id>/   | (error)           | (error)     | (error)                   | delete glass    |
+| /glasses/id/     | (error)           | (error)     | (error)                   | delete glass    |
 | /reviews/        | create new review | (error)     | view all reviews          | (error)         |
-| /reviews/<id>/   | (error)           | (error)     | view review               | delete review   |
+| /reviews/id/     | (error)           | (error)     | view review               | delete review   |
 | /favorites/      | add new favorite  | (error)     | (error)                   | (error)         |
-| /favorites/<id>/ | (error)           | (error)     | (error)                   | delete favorite |
+| /favorites/id/   | (error)           | (error)     | (error)                   | delete favorite |
 | /cronjobs/       | (error)           | (error)     | reset daily/weekly limits | (error)         |
 	
 
