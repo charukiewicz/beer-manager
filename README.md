@@ -31,6 +31,7 @@ This Beer Manager API includes a number of features that make a simple yet robus
 * Sorting of data retrieved via GET requests
 * Human readable and descriptive success/error messages
 * JSON based data entry and retrieval
+
 ________________
 
 
@@ -44,29 +45,30 @@ Preliminary requirements:
 
 
 Execute the following commands in the terminal (or perform the system equivalent):
-cd /path/to/beer_manager
-virtualenv venv
-. venv/bin/activate
-pip install flask
-pip install flask-sqlalachemy
-pip install pymysql3
+    cd /path/to/beer_manager
+    virtualenv venv
+    . venv/bin/activate
+    pip install flask
+    pip install flask-sqlalachemy
+    pip install pymysql3
 
 
 At this point add the import beer_manager.sql into the MySQL database, and add the MySQL user details to routes.py, to the line starting with “app.config['SQLALCHEMY_DATABASE_URI']”
 
 
 Add the following two cronjobs to the system crontab (sudo -e crontab):
-@daily curl -i -X GET http://localhost:5000/cronjobs/?jobtype=daily
-@weekly curl -i -X GET http://localhost:5000/cronjobs/?jobtype=weekly
+* @daily curl -i -X GET http://localhost:5000/cronjobs/?jobtype=daily
+* @weekly curl -i -X GET http://localhost:5000/cronjobs/?jobtype=weekly
 
 
 Installation is complete.  Return to the beer_manager directory and ensure that the Python virtual environment is active (. venv/bin/activate).  Start the server with:
 
 
-python routes.py
+    python routes.py
 
 
 It is now possible to connect to the API through localhost using port 5000.  GET requests can be sent via any internet browser using http://localhost:5000/, and other types of requests can be sent using curl on a Linux based system.  Full usage with provided examples is covered in the rest of this manual.
+
 ________________
 
 
@@ -100,14 +102,14 @@ ________________
 API Paths:
 
 
-/:
+**/:**
 Provides database statistics.  Accepted HTTP verb: GET
         
-        GET:
+GET:
 Displays the number of users, beers, reviews, beer glasses, and favorited beers present in the database
 
 
-/users/:
+**/users/:**
 Provides access to users in the database.  Accepted HTTP verbs: GET, POST.
 
 
@@ -154,7 +156,7 @@ This will create a new user named “Jack” with the specified account informat
 ________________
 
 
-/users/<id>/:
+**/users/[id]/:**
 Allows access to an individual user specified by <id> parameter in the path.  Accepted HTTP verbs: PUT, GET, DELETE.
 
 
@@ -205,7 +207,7 @@ curl -i -X DELETE http://localhost:5000/users/3/
 ________________
 
 
-/beers/:
+**/beers/:**
 Provides access to beers in the database.  Accepted HTTP verbs: GET, POST.
 
 
@@ -258,7 +260,7 @@ curl -i -H "Content-Type: application/json" -X POST -d '{"name":"312","ibu":"40"
 ________________
 
 
-/beers/<id>/:
+**/beers/[id]/:**
 Provides access to a specific beer.  Accepted HTTP verbs: GET, DELETE.
 
 
@@ -285,8 +287,10 @@ None
 Example:
 curl -i -X DELETE http://localhost:5000/beers/3/
 
+_______________________
 
-/glasses/:
+
+**/glasses/:**
 Provides access to all beer glasses in the database.  Accepted HTTP verbs: POST, GET.
 
 
@@ -318,10 +322,11 @@ POST parameters must be passed via JSON format
 
 Example:
 curl -i -H "Content-Type: application/json" -X POST -d '{"name":"Beer Boot"}' http://localhost:5000/glasses/
+
 ________________
 
 
-/glasses/<id>/:
+**/glasses/[id]/:**
 Allows access to a specific glass.  Accepted HTTP verb: DELETE.
 
 
@@ -386,7 +391,10 @@ Example:
 curl -i -H "Content-Type: application/json" -X POST -d '{"user_id":"1","beer_id":"3","aroma":"2.5","appearance":"4.2","taste":"7.8","palate":"4.0","bottle_style":"3.5"}' http://localhost:5000/reviews/
 
 
-/reviews/<id>/:
+________________
+
+
+**/reviews/[id]/:**
 Provides access to a specific review.  Accepted HTTP verbs: GET, DELETE.
 
 
@@ -414,7 +422,10 @@ Example:
 curl -i -X DELETE http://localhost:5000/reviews/3/
 
 
-/favorites/:
+___________________
+
+
+**/favorites/:**
 Provides access to favorites in the database.  Accepted HTTP verb: POST.
 
 
@@ -432,10 +443,11 @@ POST parameters must be passed via JSON format
 
 Example:
 curl -i -H "Content-Type: application/json" -X POST -d '{"user_id":"2",”beer_id”:”5”}' http://localhost:5000/favorites/
+
 ________________
 
 
-/favorites/<id>/:
+**/favorites/[id]/:**
 Allows access to a specific favorite.  Accepted HTTP verb: DELETE.
 
 
@@ -450,8 +462,10 @@ None
 Example:
 curl -i -X DELETE http://localhost:5000/favorites/3/
 
+_________________
 
-/cronjobs/:
+
+**/cronjobs/:**
 Special path designed for daily and weekly system tasks.  Accepted HTTP verb: GET.
 
 
