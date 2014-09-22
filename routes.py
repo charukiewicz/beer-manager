@@ -1,72 +1,95 @@
+#!/usr/bin/env python
+import os
+import hashlib
 from flask import Flask, request, make_response, abort
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask import jsonify
 from sqlalchemy import desc, asc, Table, insert
-import os
-import hashlib
+
+# Author: Christian Charukiewicz
+# Email: c.charukiewicz@gmail.com
 
 app = Flask(__name__)
 db = SQLAlchemy(app)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:password@localhost/beer_manager'
+# MySQL configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://username:password@localhost/beer_manager'
 
+# Database Models
 class User(db.Model):
-	__tablename__ = 'users'
-	id = db.Column(db.Integer, primary_key = True)
-	username = db.Column(db.String(128))
-	email = db.Column(db.String(128))
-	password = db.Column(db.String(128))
-	salt = db.Column(db.String(128))
-	beer_added_today = db.Column(db.Integer)
+	__tablename__ 		= 'users'
+	id 					= db.Column(db.Integer, primary_key = True)
+	username 			= db.Column(db.String(128))
+	email 				= db.Column(db.String(128))
+	password 			= db.Column(db.String(128))
+	salt 				= db.Column(db.String(128))
+	beer_added_today 	= db.Column(db.Integer)
 
 class Beer(db.Model):
-	__tablename__ = 'beers'
-	id = db.Column(db.Integer, primary_key = True)
-	name = db.Column(db.String(128))
-	ibu = db.Column(db.Integer)
-	calories = db.Column(db.Integer)
-	abv = db.Column(db.Float(6))
-	style = db.Column(db.String(128))
-	brewery_location = db.Column(db.String(128))
-	glass_type = db.Column(db.Integer)
+	__tablename__ 		= 'beers'
+	id 					= db.Column(db.Integer, primary_key = True)
+	name 				= db.Column(db.String(128))
+	ibu 				= db.Column(db.Integer)
+	calories 			= db.Column(db.Integer)
+	abv 				= db.Column(db.Float(6))
+	style 				= db.Column(db.String(128))
+	brewery_location 	= db.Column(db.String(128))
+	glass_type 			= db.Column(db.Integer)
 
 class Glass(db.Model):
-	__tablename__ = 'glasses'
-	id = db.Column(db.Integer, primary_key = True)
-	name = db.Column(db.String(128))
+	__tablename__ 		= 'glasses'
+	id 					= db.Column(db.Integer, primary_key = True)
+	name 				= db.Column(db.String(128))
 
 class Review(db.Model):
-	__tablename__ = 'reviews'
-	id = db.Column(db.Integer, primary_key = True)
-	created = db.Column(db.DateTime)
-	user_id = db.Column(db.Integer)
-	beer_id = db.Column(db.Integer)
-	aroma = db.Column(db.Float(6))
-	appearance = db.Column(db.Float(6))
-	taste = db.Column(db.Float(6))
-	palate = db.Column(db.Float(6))
-	bottle_style = db.Column(db.Float(6))
-	overall = db.Column(db.Float(6))
+	__tablename__ 		= 'reviews'
+	id 					= db.Column(db.Integer, primary_key = True)
+	created 			= db.Column(db.DateTime)
+	user_id 			= db.Column(db.Integer)
+	beer_id 			= db.Column(db.Integer)
+	aroma 				= db.Column(db.Float(6))
+	appearance 			= db.Column(db.Float(6))
+	taste 				= db.Column(db.Float(6))
+	palate 				= db.Column(db.Float(6))
+	bottle_style 		= db.Column(db.Float(6))
+	overall 			= db.Column(db.Float(6))
+	posted_this_week 	= db.Column(db.Integer)
 
 class Favorite(db.Model):
-	__tablename__ = 'favorites'
-	id = db.Column(db.Integer, primary_key = True)
-	user_id = db.Column(db.Integer)
-	beer_id = db.Column(db.Integer)
+	__tablename__ 		= 'favorites'
+	id 					= db.Column(db.Integer, primary_key = True)
+	user_id 			= db.Column(db.Integer)
+	beer_id 			= db.Column(db.Integer)
 
-class Weekly(db.Model):
-	__tablename__ = 'weekly_reviews'
-	id = db.Column(db.Integer, primary_key = True)
-	user_id = db.Column(db.Integer)
-	beer_id = db.Column(db.Integer)	
+# End of Database Models
 
-@app.route('/')
-def index():
-	return "Hello, World!"
-
+# Make the 500 error more relevant to our application
 @app.errorhandler(500)
 def missing_data(error):
 	return make_response(jsonify({'error': 'Missing or Invalid Input Data'}), 500)
+
+# Begin API route paths
+@app.route('/')
+def index():
+	dbsession 	= db.session()
+
+	users 		= dbsession.query(User.id).count()
+	beers 		= dbsession.query(Beer.id).count()
+	reviews 	= dbsession.query(Review.id).count()
+	glasses 	= dbsession.query(Glass.id).count()
+	favorites 	= dbsession.query(Favorite.id).count()
+
+	d = {
+		"total_users":	 		users,
+		"total_beers":	 		beers,
+		"total_reviews": 		reviews,
+		"total_beer_glasses": 	glasses,
+		"total_favorites": 		favorites
+	}
+
+	return jsonify(statistics = d)
+
+	dbsession.commit()
 
 @app.route('/users/', methods=['GET', 'POST'])
 def users():
@@ -80,13 +103,11 @@ def users():
 		elif sort == 'asc':
 			results = User.query.order_by(asc('users.username')).limit(limit).all()
 
-		#results = User.query.from_statement("SELECT * FROM `users`")
-
 		json_results = []
 		for result in results:
-			d = {	'id': result.id,
-					'username': result.username,
-					'email': result.email,
+			d = {	'id': 				result.id,
+					'username': 		result.username,
+					'email': 			result.email,
 					'beer_added_today': result.beer_added_today }
 			json_results.append(d)
 
@@ -98,6 +119,7 @@ def users():
 		email = request.get_json().get('email')
 		password = request.get_json().get('password')
 
+		# Create password salt and hash salt+password
 		salt = os.urandom(16)
 		salt = str(salt).encode('utf-8')
 		password = password.encode('utf-8')
@@ -138,15 +160,15 @@ def user(uid):
 			review_results = Review.query.filter_by(user_id = uid).all()
 			for review_result in review_results:
 				r = {
-					'review_id': review_result.id,
-					'created': review_result.created,
-					'beer_id': review_result.beer_id,
-					'aroma': review_result.aroma,
-					'appearance': review_result.appearance,
-					'taste': review_result.taste,
-					'palate': review_result.palate,
+					'review_id': 	review_result.id,
+					'created': 		review_result.created,
+					'beer_id': 		review_result.beer_id,
+					'aroma': 		review_result.aroma,
+					'appearance': 	review_result.appearance,
+					'taste': 		review_result.taste,
+					'palate': 		review_result.palate,
 					'bottle_style': review_result.bottle_style,
-					'overall': review_result.overall}
+					'overall': 		review_result.overall }
 				reviews_posted.append(r)
 
 		favorites = []
@@ -154,18 +176,18 @@ def user(uid):
 			favorite_results = Review.query.filter_by(user_id = uid).all()
 			for favorite_result in favorite_results:
 				r = {
-					'favorite_id': favorite_result.id,
-					'beer_id': favorite_result.beer_id}
+					'favorite_id': 	favorite_result.id,
+					'beer_id': 		favorite_result.beer_id}
 				favorites.append(r)
 
-		d = {	'id': result.id,
-				'username': result.username,
-				'email': result.email,
+		d = {	'id': 				result.id,
+				'username': 		result.username,
+				'email': 			result.email,
 				'beer_added_today': result.beer_added_today,
-				'password' : result.password,
-				'salt' : result.salt,
-				'reviews_posted' : reviews_posted,
-				'favorite_beers' : favorites }
+				'password': 		result.password,
+				'salt': 			result.salt,
+				'reviews_posted': 	reviews_posted,
+				'favorite_beers': 	favorites }
 
 		return jsonify(user = d)
 
@@ -227,27 +249,27 @@ def beers():
 
 		json_results = []
 		for result in results:
-			d = {	'id': result.id,
-					'name': result.name,
-					'ibu': result.ibu,
-					'calories': result.calories,
-					'abv': result.abv,
-					'style': result.style,
+			d = {	'id': 				result.id,
+					'name': 			result.name,
+					'ibu': 				result.ibu,
+					'calories': 		result.calories,
+					'abv': 				result.abv,
+					'style': 			result.style,
 					'brewery_location': result.brewery_location,
-					'glass_type': result.glass_type }
+					'glass_type': 		result.glass_type }
 			json_results.append(d)
 
 		return jsonify(beers=json_results)
 
 	if request.method == 'POST':
 
-		name = request.get_json().get('name')
-		ibu = request.get_json().get('ibu')
-		calories = request.get_json().get('calories')
-		abv = request.get_json().get('abv')
-		style = request.get_json().get('style')
-		brewery_location = request.get_json().get('brewery_location')
-		glass_type = request.get_json().get('glass_type')
+		name = 				request.get_json().get('name')
+		ibu = 				request.get_json().get('ibu')
+		calories = 			request.get_json().get('calories')
+		abv = 				request.get_json().get('abv')
+		style = 			request.get_json().get('style')
+		brewery_location = 	request.get_json().get('brewery_location')
+		glass_type = 		request.get_json().get('glass_type')
 
 		user_id = request.get_json().get('user_id')
 
@@ -309,37 +331,39 @@ def beer(beer_id):
 
 		result = Beer.query.filter_by(id = beer_id).first()
 
+		# Retrieve all reviews associated with the specified beer
 		all_results = []
 		average_overall = []
 		if result != None:
 			review_results = Review.query.filter_by(beer_id = beer_id).all()
 			for review_result in review_results:
 				r = {
-					'review_id': review_result.id,
-					'created': review_result.created,
-					'user_id': review_result.user_id,
-					'beer_id': review_result.beer_id,
-					'aroma': review_result.aroma,
-					'appearance': review_result.appearance,
-					'taste': review_result.taste,
-					'palate': review_result.palate,
+					'review_id': 	review_result.id,
+					'created': 		review_result.created,
+					'user_id': 		review_result.user_id,
+					'beer_id': 		review_result.beer_id,
+					'aroma': 		review_result.aroma,
+					'appearance': 	review_result.appearance,
+					'taste': 		review_result.taste,
+					'palate': 		review_result.palate,
 					'bottle_style': review_result.bottle_style,
-					'overall': review_result.overall}
+					'overall': 		review_result.overall}
 				average_overall.append(float(review_result.overall))
 				all_results.append(r)
 
+		# Average of overall ratings for all reviews
 		overall_rating = sum(average_overall) / float(len(average_overall))
 
-		d = {	'id': result.id,
-				'name': result.name,
-				'ibu': result.ibu,
-				'calories': result.calories,
-				'abv': result.abv,
-				'style': result.style,
+		d = {	'id': 				result.id,
+				'name': 			result.name,
+				'ibu': 				result.ibu,
+				'calories': 		result.calories,
+				'abv': 				result.abv,
+				'style': 			result.style,
 				'brewery_location': result.brewery_location,
-				'glass_type': result.glass_type,
-				'reviews': all_results,
-				'overall_rating': overall_rating }
+				'glass_type': 		result.glass_type,
+				'reviews': 			all_results,
+				'overall_rating': 	overall_rating }
 
 		return jsonify(beer = d)
 
@@ -347,6 +371,8 @@ def beer(beer_id):
 
 		dbsession = db.session()
 		dbsession.query(Beer).filter_by(id = beer_id).delete()
+		dbsession.query(Review).filter_by(beer_id = beer_id).delete()
+		dbsession.query(Favorite).filter_by(beer_id = beer_id).delete()
 		dbsession.commit()
 
 		success = "Beer Deleted"
@@ -418,29 +444,29 @@ def reviews():
 
 		json_results = []
 		for result in results:
-			d = {	'id': result.id,
-					'created': result.created,
-					'user_id': result.user_id,
-					'beer_id': result.beer_id,
-					'aroma': result.aroma,
-					'appearance': result.appearance,
-					'taste': result.taste,
-					'palate': result.palate,
+			d = {	'id': 			result.id,
+					'created': 		result.created,
+					'user_id': 		result.user_id,
+					'beer_id': 		result.beer_id,
+					'aroma': 		result.aroma,
+					'appearance': 	result.appearance,
+					'taste': 		result.taste,
+					'palate': 		result.palate,
 					'bottle_style': result.bottle_style,
-					'overall': result.overall }
+					'overall': 		result.overall }
 			json_results.append(d)
 
 		return jsonify(review=json_results)
 
 	if request.method == 'POST':
 
-		user_id = request.get_json().get('user_id')
-		beer_id = request.get_json().get('beer_id')
-		aroma = request.get_json().get('aroma')
-		appearance = request.get_json().get('appearance')
-		taste = request.get_json().get('taste')
-		palate = request.get_json().get('palate')
-		bottle_style = request.get_json().get('bottle_style')
+		user_id = 		request.get_json().get('user_id')
+		beer_id = 		request.get_json().get('beer_id')
+		aroma = 		request.get_json().get('aroma')
+		appearance = 	request.get_json().get('appearance')
+		taste = 		request.get_json().get('taste')
+		palate = 		request.get_json().get('palate')
+		bottle_style = 	request.get_json().get('bottle_style')
 
 		if user_id == "" or user_id == None:
 			abort(500)
@@ -489,7 +515,7 @@ def reviews():
 			error = "The beer does not exist"
 			return jsonify(response = error)
 
-		weeklycheck = Weekly.query.filter_by(user_id = user_id, beer_id = beer_id).first()
+		weeklycheck = Review.query.filter_by(user_id = user_id, beer_id = beer_id, posted_this_week = 1).first()
 
 		if weeklycheck != None:
 			error = "This user has already reviewed this beer this week"
@@ -506,15 +532,11 @@ def reviews():
 			taste = taste,
 			palate = palate,
 			bottle_style = bottle_style,
-			overall = overall)
-
-		newWeekly = Weekly(
-			user_id = user_id,
-			beer_id = beer_id)
+			overall = overall,
+			posted_this_week = 1)
 
 		dbsession = db.session()
 		dbsession.add(newReview)
-		dbsession.add(newWeekly)
 		dbsession.commit()
 
 		success = "Review Created"
@@ -526,16 +548,16 @@ def review(review_id):
 
 		result = Review.query.filter_by(id = review_id).first()
 
-		d = {	'id': result.id,
-				'created': result.created,
-				'user_id': result.user_id,
-				'beer_id': result.beer_id,
-				'aroma': result.aroma,
-				'appearance': result.appearance,
-				'taste': result.taste,
-				'palate': result.palate,
+		d = {	'id': 			result.id,
+				'created': 		result.created,
+				'user_id': 		result.user_id,
+				'beer_id': 		result.beer_id,
+				'aroma': 		result.aroma,
+				'appearance': 	result.appearance,
+				'taste': 		result.taste,
+				'palate': 		result.palate,
 				'bottle_style': result.bottle_style,
-				'overall': result.overall }
+				'overall': 		result.overall }
 
 		return jsonify(review = d)
 
@@ -614,11 +636,19 @@ def cronjobs():
 			success = "Daily records cleared"
 			return jsonify(response = success)
 
-		elif job_type == "weekly":
+		if job_type == "weekly":
 			dbsession = db.session()
-			dbsession.query(Weekly).filter_by(id = 1).delete()
+
+			query = dbsession.query(Review)
+			records = query.all()
+			for record in records:
+				record.posted_this_week = 0
+			
 			dbsession.commit()
+
+			success = "Weekly records cleared"
+			return jsonify(response = success)
 
 
 if __name__ == '__main__':
-  app.run(debug=True)
+  app.run(debug=False)
